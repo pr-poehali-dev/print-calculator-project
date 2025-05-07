@@ -7,11 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
-import { Calculator, Printer, FileText, Clock, Truck } from "lucide-react";
+import { Calculator, Printer, FileText, Clock, Truck, ExternalLink } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import CalculatorResults from "./CalculatorResults";
 
-// Примерные данные для демонстрации (в реальном проекте будут загружаться из Google Таблиц)
+// Данные будут загружаться из Google Таблицы в реальном проекте
+// URL таблицы: https://docs.google.com/spreadsheets/d/1dexHmpzx9z3cAXzxpqKXLdWS9CjpBF5QxZZpTpMTkAE/edit#gid=0
 const MOCK_DATA = {
   productTypes: [
     { id: 'business_card', name: 'Визитки' },
@@ -99,8 +100,73 @@ const MOCK_DATA = {
         'uv_varnish': 3,
         'soft_touch': 3.5
       }
+    },
+    'booklet': {
+      basePrice: 8,
+      paperMultipliers: {
+        'offset_80': 1,
+        'coated_115': 1.3,
+        'coated_170': 1.5,
+        'coated_300': 2
+      },
+      colorMultipliers: {
+        '4+0': 1,
+        '4+4': 1.8,
+        '1+0': 0.7,
+        '1+1': 1.3
+      },
+      finishingPrices: {
+        'none': 0,
+        'glossy_lamination': 2.5,
+        'matte_lamination': 3,
+        'uv_varnish': 4,
+        'soft_touch': 4.5
+      }
+    },
+    'brochure': {
+      basePrice: 12,
+      paperMultipliers: {
+        'offset_80': 1,
+        'coated_115': 1.4,
+        'coated_170': 1.6,
+        'coated_300': 2.2
+      },
+      colorMultipliers: {
+        '4+0': 1,
+        '4+4': 1.9,
+        '1+0': 0.7,
+        '1+1': 1.3
+      },
+      finishingPrices: {
+        'none': 0,
+        'glossy_lamination': 3,
+        'matte_lamination': 3.5,
+        'uv_varnish': 4.5,
+        'soft_touch': 5
+      }
+    },
+    'poster': {
+      basePrice: 15,
+      paperMultipliers: {
+        'offset_80': 1,
+        'coated_115': 1.2,
+        'coated_170': 1.5,
+        'coated_300': 1.8
+      },
+      colorMultipliers: {
+        '4+0': 1,
+        '4+4': 1.7,
+        '1+0': 0.6,
+        '1+1': 1.1
+      },
+      finishingPrices: {
+        'none': 0,
+        'glossy_lamination': 3.5,
+        'matte_lamination': 4,
+        'uv_varnish': 5,
+        'soft_touch': 5.5
+      }
     }
-    // другие типы продукции...
   },
   
   // Множители скидок в зависимости от тиража
@@ -354,6 +420,17 @@ const PrintCalculator = () => {
                 </Label>
               </div>
             </div>
+          </div>
+          
+          <div className="mt-2 text-sm">
+            <a 
+              href="https://docs.google.com/spreadsheets/d/1dexHmpzx9z3cAXzxpqKXLdWS9CjpBF5QxZZpTpMTkAE/edit?usp=sharing" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-800 inline-flex items-center"
+            >
+              Открыть таблицу с ценами <ExternalLink className="ml-1 h-3 w-3" />
+            </a>
           </div>
         </CardContent>
         <CardFooter>
