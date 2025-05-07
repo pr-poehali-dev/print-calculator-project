@@ -7,8 +7,9 @@ export interface CalculatorState {
   finishingOption: string;
   quantity: number;
   uploadedFile: File | null;
-  isUrgent: boolean;
+  urgencyPercent: number;
   needDelivery: boolean;
+  priceData: PriceData | null;
 }
 
 export interface ProductType {
@@ -57,4 +58,15 @@ export interface CalculatorFormProps {
   handleChange: (name: keyof CalculatorState, value: any) => void;
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   calculatePrice: () => void;
+  handleExcelUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+export interface DataFormat {
+  productTypes: ProductType[];
+  paperTypes: PaperType[];
+  sizes: SizeOption[];
+  colorOptions: ColorOption[];
+  finishingOptions: FinishingOption[];
+  prices: Record<string, PriceData>;
+  quantityDiscounts: QuantityDiscount[];
 }

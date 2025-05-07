@@ -10,6 +10,7 @@ interface CalculatorResultsProps {
   pricePerUnit: number;
   quantity: number;
   isUrgent: boolean;
+  urgencyPercent: number;
   needDelivery: boolean;
 }
 
@@ -18,6 +19,7 @@ const CalculatorResults = ({
   pricePerUnit, 
   quantity,
   isUrgent,
+  urgencyPercent,
   needDelivery
 }: CalculatorResultsProps) => {
   const handleOrderClick = () => {
@@ -59,9 +61,9 @@ const CalculatorResults = ({
               {isUrgent && (
                 <div className="flex justify-between mb-1 text-amber-600">
                   <span className="flex items-center">
-                    <Clock className="w-4 h-4 mr-1" /> Срочный заказ:
+                    <Clock className="w-4 h-4 mr-1" /> Наценка за срочность:
                   </span>
-                  <span>+30%</span>
+                  <span>+{urgencyPercent}%</span>
                 </div>
               )}
               

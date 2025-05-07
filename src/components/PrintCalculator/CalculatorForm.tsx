@@ -17,7 +17,8 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({
   isCalculating,
   handleChange,
   handleFileChange,
-  calculatePrice
+  calculatePrice,
+  handleExcelUpload
 }) => {
   return (
     <Card className="lg:col-span-2">
@@ -41,18 +42,8 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({
           calculatorState={calculatorState}
           handleChange={handleChange}
           handleFileChange={handleFileChange}
+          handleExcelUpload={handleExcelUpload}
         />
-        
-        <div className="mt-2 text-sm">
-          <a 
-            href="https://docs.google.com/spreadsheets/d/1dexHmpzx9z3cAXzxpqKXLdWS9CjpBF5QxZZpTpMTkAE/edit?usp=sharing" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:text-blue-800 inline-flex items-center"
-          >
-            Открыть таблицу с ценами <ExternalLink className="ml-1 h-3 w-3" />
-          </a>
-        </div>
       </CardContent>
       
       <CardFooter>

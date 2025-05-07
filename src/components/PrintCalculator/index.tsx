@@ -4,7 +4,8 @@ import { toast } from "@/hooks/use-toast";
 import { MOCK_DATA } from "./data";
 import CalculatorResults from "../CalculatorResults";
 import CalculatorForm from "./CalculatorForm";
-import { CalculatorState } from "./types";
+import { CalculatorState, SizeOption, DataFormat } from "./types";
+import { read, utils } from "xlsx";
 
 const PrintCalculator = () => {
   const [calculatorState, setCalculatorState] = useState<CalculatorState>({
@@ -15,19 +16,21 @@ const PrintCalculator = () => {
     finishingOption: "none",
     quantity: 100,
     uploadedFile: null,
-    isUrgent: false,
+    urgencyPercent: 0,
     needDelivery: false,
+    priceData: null,
   });
 
-  const [availableSizes, setAvailableSizes] = useState(MOCK_DATA.sizes);
+  const [availableSizes, setAvailableSizes] = useState<SizeOption[]>(MOCK_DATA.sizes);
   const [totalPrice, setTotalPrice] = useState(0);
   const [pricePerUnit, setPricePerUnit] = useState(0);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [calculatorData, setCalculatorData] = useState<DataFormat>(MOCK_DATA);
 
   // Фильтрация доступных размеров в зависимости от выбранного типа продукции
   useEffect(() => {
     if (calculatorState.productType) {
-      const filtered = MOCK_DATA.sizes.filter(s => s.productTypeId === calculatorState.productType);
+      const filtered = calculatorData.sizes.filter(s => s.productTypeId === calculatorState.productType);
       setAvailableSizes(filtered);
       
       // Если текущий выбранный размер не доступен для нового типа продукции,
@@ -45,7 +48,7 @@ const PrintCalculator = () => {
         size: ""
       }));
     }
-  }, [calculatorState.productType]);
+  }, [calculatorState.productType, calculatorData.sizes]);
 
   const handleChange = (name: keyof CalculatorState, value: any) => {
     setCalculatorState(prev => ({
@@ -68,8 +71,90 @@ const PrintCalculator = () => {
     }
   };
 
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      try {
+        const file = e.target.files[0];
+        const data = await file.arrayBuffer();
+        const workbook = read(data);
+        
+        const newData: Partial<DataFormat> = {};
+        
+        // Обработка каждого листа таблицы
+        if (workbook.SheetNames.includes('ProductTypes')) {
+          const sheet = workbook.Sheets['ProductTypes'];
+          newData.productTypes = utils.sheet_to_json(sheet);
+        }
+        
+        if (workbook.SheetNames.includes('PaperTypes')) {
+          const sheet = workbook.Sheets['PaperTypes'];
+          newData.paperTypes = utils.sheet_to_json(sheet);
+        }
+        
+        if (workbook.SheetNames.includes('Sizes')) {
+          const sheet = workbook.Sheets['Sizes'];
+          newData.sizes = utils.sheet_to_json(sheet);
+        }
+        
+        if (workbook.SheetNames.includes('ColorOptions')) {
+          const sheet = workbook.Sheets['ColorOptions'];
+          newData.colorOptions = utils.sheet_to_json(sheet);
+        }
+        
+        if (workbook.SheetNames.includes('FinishingOptions')) {
+          const sheet = workbook.Sheets['FinishingOptions'];
+          newData.finishingOptions = utils.sheet_to_json(sheet);
+        }
+        
+        if (workbook.SheetNames.includes('QuantityDiscounts')) {
+          const sheet = workbook.Sheets['QuantityDiscounts'];
+          newData.quantityDiscounts = utils.sheet_to_json(sheet);
+        }
+        
+        if (workbook.SheetNames.includes('Prices')) {
+          const sheet = workbook.Sheets['Prices'];
+          const pricesData = utils.sheet_to_json(sheet);
+          
+          // Преобразуем данные в формат, который ожидает калькулятор
+          const prices: Record<string, any> = {};
+          pricesData.forEach((item: any) => {
+            if (item.productTypeId) {
+              prices[item.productTypeId] = {
+                basePrice: parseFloat(item.basePrice) || 0,
+                paperMultipliers: JSON.parse(item.paperMultipliers || '{}'),
+                colorMultipliers: JSON.parse(item.colorMultipliers || '{}'),
+                finishingPrices: JSON.parse(item.finishingPrices || '{}')
+              };
+            }
+          });
+          
+          newData.prices = prices;
+        }
+        
+        // Обновляем данные калькулятора
+        setCalculatorData(prevData => ({
+          ...prevData,
+          ...newData as DataFormat
+        }));
+        
+        toast({
+          title: "Таблица загружена",
+          description: "Данные калькулятора обновлены из Excel-таблицы"
+        });
+        
+      } catch (error) {
+        toast({
+          title: "Ошибка при загрузке таблицы",
+          description: "Произошла ошибка при чтении Excel-файла. Проверьте формат таблицы.",
+          variant: "destructive"
+        });
+        console.error("Error parsing Excel file:", error);
+      }
+    }
+  };
+
   const calculatePrice = () => {
-    const { productType, paperType, size, colorOption, quantity, isUrgent, needDelivery, finishingOption } = calculatorState;
+    const { productType, paperType, size, colorOption, quantity, urgencyPercent, needDelivery, finishingOption } = calculatorState;
     
     if (!productType || !paperType || !size || !colorOption || quantity <= 0) {
       toast({
@@ -85,8 +170,8 @@ const PrintCalculator = () => {
     // Имитация задержки для демонстрации
     setTimeout(() => {
       try {
-        // В реальном проекте здесь будет обращение к данным из Google Таблицы
-        const productData = MOCK_DATA.prices[productType as keyof typeof MOCK_DATA.prices];
+        // Используем данные из загруженной таблицы или MOCK_DATA
+        const productData = calculatorData.prices[productType];
         
         if (!productData) {
           throw new Error("Данные для расчета не найдены");
@@ -96,27 +181,27 @@ const PrintCalculator = () => {
         let unitPrice = productData.basePrice;
         
         // Применяем коэффициенты бумаги
-        unitPrice *= productData.paperMultipliers[paperType as keyof typeof productData.paperMultipliers] || 1;
+        unitPrice *= productData.paperMultipliers[paperType] || 1;
         
         // Применяем коэффициенты цветности
-        unitPrice *= productData.colorMultipliers[colorOption as keyof typeof productData.colorMultipliers] || 1;
+        unitPrice *= productData.colorMultipliers[colorOption] || 1;
         
         // Добавляем стоимость отделки
-        unitPrice += productData.finishingPrices[finishingOption as keyof typeof productData.finishingPrices] || 0;
+        unitPrice += productData.finishingPrices[finishingOption] || 0;
         
         // Определяем скидку по тиражу
-        const discountLevel = MOCK_DATA.quantityDiscounts.find(
+        const discountLevel = calculatorData.quantityDiscounts.find(
           d => quantity >= d.min && quantity <= d.max
         );
         const quantityMultiplier = discountLevel ? discountLevel.multiplier : 1;
         
         // Умножители для срочности и доставки
-        const urgencyMultiplier = isUrgent ? 1.3 : 1;
+        const urgencyMultiplier = 1 + (urgencyPercent / 100);
         const deliveryCost = needDelivery ? 500 : 0;
         
         // Окончательный расчет
-        const finalUnitPrice = unitPrice * quantityMultiplier * urgencyMultiplier;
-        const finalTotalPrice = (finalUnitPrice * quantity) + deliveryCost;
+        const finalUnitPrice = unitPrice * quantityMultiplier;
+        const finalTotalPrice = (finalUnitPrice * quantity * urgencyMultiplier) + deliveryCost;
         
         setPricePerUnit(parseFloat(finalUnitPrice.toFixed(2)));
         setTotalPrice(parseFloat(finalTotalPrice.toFixed(2)));
@@ -147,6 +232,7 @@ const PrintCalculator = () => {
         isCalculating={isCalculating}
         handleChange={handleChange}
         handleFileChange={handleFileChange}
+        handleExcelUpload={handleExcelUpload}
         calculatePrice={calculatePrice}
       />
       
@@ -154,7 +240,8 @@ const PrintCalculator = () => {
         totalPrice={totalPrice} 
         pricePerUnit={pricePerUnit} 
         quantity={calculatorState.quantity}
-        isUrgent={calculatorState.isUrgent}
+        isUrgent={calculatorState.urgencyPercent > 0}
+        urgencyPercent={calculatorState.urgencyPercent}
         needDelivery={calculatorState.needDelivery}
       />
     </div>
