@@ -5,7 +5,6 @@ import { MOCK_DATA } from "./data";
 import CalculatorResults from "../CalculatorResults";
 import CalculatorForm from "./CalculatorForm";
 import { CalculatorState, SizeOption, DataFormat } from "./types";
-import { read, utils } from "xlsx";
 
 const PrintCalculator = () => {
   const [calculatorState, setCalculatorState] = useState<CalculatorState>({
@@ -76,44 +75,48 @@ const PrintCalculator = () => {
       try {
         const file = e.target.files[0];
         const data = await file.arrayBuffer();
-        const workbook = read(data);
+        
+        // Используем импорт библиотеки динамически, чтобы избежать проблем с загрузкой
+        // eslint-disable-next-line
+        const XLSX = await import('xlsx');
+        const workbook = XLSX.read(data);
         
         const newData: Partial<DataFormat> = {};
         
         // Обработка каждого листа таблицы
         if (workbook.SheetNames.includes('ProductTypes')) {
           const sheet = workbook.Sheets['ProductTypes'];
-          newData.productTypes = utils.sheet_to_json(sheet);
+          newData.productTypes = XLSX.utils.sheet_to_json(sheet);
         }
         
         if (workbook.SheetNames.includes('PaperTypes')) {
           const sheet = workbook.Sheets['PaperTypes'];
-          newData.paperTypes = utils.sheet_to_json(sheet);
+          newData.paperTypes = XLSX.utils.sheet_to_json(sheet);
         }
         
         if (workbook.SheetNames.includes('Sizes')) {
           const sheet = workbook.Sheets['Sizes'];
-          newData.sizes = utils.sheet_to_json(sheet);
+          newData.sizes = XLSX.utils.sheet_to_json(sheet);
         }
         
         if (workbook.SheetNames.includes('ColorOptions')) {
           const sheet = workbook.Sheets['ColorOptions'];
-          newData.colorOptions = utils.sheet_to_json(sheet);
+          newData.colorOptions = XLSX.utils.sheet_to_json(sheet);
         }
         
         if (workbook.SheetNames.includes('FinishingOptions')) {
           const sheet = workbook.Sheets['FinishingOptions'];
-          newData.finishingOptions = utils.sheet_to_json(sheet);
+          newData.finishingOptions = XLSX.utils.sheet_to_json(sheet);
         }
         
         if (workbook.SheetNames.includes('QuantityDiscounts')) {
           const sheet = workbook.Sheets['QuantityDiscounts'];
-          newData.quantityDiscounts = utils.sheet_to_json(sheet);
+          newData.quantityDiscounts = XLSX.utils.sheet_to_json(sheet);
         }
         
         if (workbook.SheetNames.includes('Prices')) {
           const sheet = workbook.Sheets['Prices'];
-          const pricesData = utils.sheet_to_json(sheet);
+          const pricesData = XLSX.utils.sheet_to_json(sheet);
           
           // Преобразуем данные в формат, который ожидает калькулятор
           const prices: Record<string, any> = {};
